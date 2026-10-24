@@ -607,8 +607,6 @@ with tab_shop:
 
     else:
         # ── Product grid ─────────────────────────────────────
-        # Each card is a self-contained iframe (components.html).
-        # This bypasses Streamlit's HTML sanitiser entirely — no raw tags ever.
 
         # Pre-fetch all media in one query
         all_product_ids = [p["id"] for p in products]
@@ -624,130 +622,104 @@ with tab_shop:
         except Exception:
             pass
 
-        # Handle iframe button actions (set via query_params from JS postMessage)
-        _act = st.query_params.get("act")
-        _pid = st.query_params.get("pid")
-        _qty = int(st.query_params.get("pqty", "1") or "1")
-        if _act and _pid:
-            # find product
-            _prod = next((p for p in products if p["id"] == _pid), None)
-            if _act == "add" and _prod:
-                # find image
-                _media = media_by_product.get(_pid, [])
-                _img   = next((m["file_url"] for m in _media if m.get("media_type")=="image"), None)
-                cart[_pid] = {
-                    "name":        _prod["name"],
-                    "price":       float(_prod["price"]) if _prod.get("price") is not None else None,
-                    "quantity":    _qty,
-                    "image_url":   _img,
-                    "description": _prod.get("description") or "",
-                }
-                st.query_params.clear()
-                st.toast(f"✅ {_prod['name']} added!", icon="🛒")
-                st.rerun()
-            elif _act == "det" and _prod:
-                st.session_state["detail_pid"] = _pid
-                st.query_params.clear()
-                st.rerun()
+        # ── Always exactly 2 columns, fixed card height ──────
+        IMG_H  = 200   # carousel/image height in px
+        CARD_H = IMG_H + (28 if True else 0)  # + dots row for multi-image
 
-        # 2-column layout (works on all screen sizes)
-        col_pairs = [products[i:i+2] for i in range(0, len(products), 2)]
+        # Pad to even so last row always has 2 cells
+        padded = products + ([None] if len(products) % 2 else [])
+        pairs  = [padded[i:i+2] for i in range(0, len(padded), 2)]
 
-        for pair in col_pairs:
-            cols = st.columns(len(pair), gap="small")
-            for col, p in zip(cols, pair):
+        for pair in pairs:
+            left_col, right_col = st.columns(2, gap="small")
+            for col, p in zip([left_col, right_col], pair):
                 with col:
-                    media = media_by_product.get(p["id"], [])
+                    if p is None:
+                        st.markdown(f'<div style="height:{CARD_H+110}px"></div>',
+                                    unsafe_allow_html=True)
+                        continue
+
+                    media    = media_by_product.get(p["id"], [])
                     img_list = [m["file_url"] for m in media if m.get("media_type") == "image"]
-                    primary_image_url = img_list[0] if img_list else None
-                    on_sale = (
+                    n_imgs   = len(img_list)
+                    on_sale  = (
                         p.get("original_price") is not None and p.get("price") is not None
                         and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
                     )
+                    name_esc  = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
 
-                    # ── Build card ──────────────────────────
-                    name_esc = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
-                    img_src  = img_list[0] if img_list else ""
-                    img_html = (
-                        f'<img src="{img_src}" style="width:100%;height:180px;'
-                        f'object-fit:cover;display:block;" loading="lazy" alt="{name_esc}"/>'
-                        if img_src else
-                        '<div style="height:180px;background:#f1f5f9;display:flex;'
-                        'align-items:center;justify-content:center;font-size:2.5rem;">🖼️</div>'
-                    )
+                    # ── 1. Carousel (or single image) via iframe ──────
+                    car_src = carousel_iframe(media, height=IMG_H)
+                    if car_src:
+                        car_h = IMG_H + (28 if n_imgs > 1 else 2)
+                        components.html(car_src, height=car_h, scrolling=False)
+                    else:
+                        st.markdown(
+                            f'<div style="height:{IMG_H}px;background:#f1f5f9;'
+                            f'display:flex;align-items:center;justify-content:center;'
+                            f'font-size:2rem;border-radius:10px;">🖼️</div>',
+                            unsafe_allow_html=True,
+                        )
 
+                    # ── 2. Name + price row (clean HTML, no interactivity) ──
                     if p.get("price") is not None:
                         if on_sale:
                             pct = sale_pct(p["original_price"], p["price"])
                             price_html = (
                                 f'<span style="background:linear-gradient(90deg,#ef4444,#f97316);'
                                 f'color:#fff;font-size:.6rem;font-weight:700;border-radius:20px;'
-                                f'padding:2px 6px;margin-right:4px;vertical-align:middle;">🔥{pct}</span>'
-                                f'<span style="font-size:.95rem;font-weight:800;color:#2563eb;'
-                                f'vertical-align:middle;">{money(p["price"])}</span>'
-                                f'<span style="font-size:.7rem;color:#94a3b8;text-decoration:line-through;'
-                                f'margin-left:4px;vertical-align:middle;">{money(p["original_price"])}</span>'
+                                f'padding:1px 5px;margin-right:3px;">🔥{pct}</span>'
+                                f'<span style="font-size:.9rem;font-weight:800;color:#2563eb;">'
+                                f'{money(p["price"])}</span>'
+                                f'<span style="font-size:.7rem;color:#94a3b8;'
+                                f'text-decoration:line-through;margin-left:3px;">'
+                                f'{money(p["original_price"])}</span>'
                             )
                         else:
                             price_html = (
-                                f'<span style="font-size:.95rem;font-weight:800;color:#2563eb;">'
+                                f'<span style="font-size:.9rem;font-weight:800;color:#2563eb;">'
                                 f'{money(p["price"])}</span>'
                             )
                     else:
-                        price_html = '<span style="font-size:.8rem;color:#64748b;font-style:italic;">📞 Contact</span>'
+                        price_html = (
+                            '<span style="font-size:.78rem;color:#64748b;font-style:italic;">'
+                            '📞 Contact</span>'
+                        )
 
-                    pid_safe = p["id"].replace("-","_")
+                    st.markdown(
+                        f'<div style="display:flex;justify-content:space-between;'
+                        f'align-items:baseline;gap:6px;padding:6px 2px 2px;">'
+                        f'<span style="font-size:.88rem;font-weight:700;color:#1e293b;'
+                        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">'
+                        f'{name_esc}</span>'
+                        f'<span style="flex-shrink:0;">{price_html}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
 
-                    card_html = f"""<!DOCTYPE html><html><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-html,body{{height:100%;}}
-body{{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;
-      border-radius:14px;border:1px solid #e2e8f0;
-      box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;
-      display:flex;flex-direction:column;}}
-.img-wrap{{flex-shrink:0;}}
-.info{{padding:8px 10px 10px;flex:1;display:flex;flex-direction:column;gap:4px;}}
-.nameprice{{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}}
-.price{{font-size:.92rem;line-height:1.4;white-space:nowrap;flex-shrink:0;}}
-.name{{font-size:.88rem;font-weight:700;color:#1e293b;line-height:1.3;
-       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1;}}
-.row{{display:flex;gap:5px;align-items:center;margin-top:auto;padding-top:6px;}}
-.qty{{width:44px;height:32px;border:1px solid #e2e8f0;border-radius:7px;
-      text-align:center;font-size:.88rem;font-weight:600;color:#1e293b;
-      background:#f8fafc;outline:none;}}
-.qty:focus{{border-color:#2563eb;}}
-.btn{{flex:1;height:32px;border:none;border-radius:7px;font-size:.78rem;
-      font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap;}}
-.badd{{background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;}}
-.bdet{{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}}
-.btn:active{{opacity:.75;transform:scale(.97);}}
-</style></head><body>
-<div class="img-wrap">{img_html}</div>
-<div class="info">
-  <div class="nameprice">
-    <span class="name">{name_esc}</span>
-    <span class="price">{price_html}</span>
-  </div>
-  <div class="row">
-    <input class="qty" type="number" id="q{pid_safe}" value="1" min="1" max="20"/>
-    <button class="btn badd" onclick="add()">🛒 Add to cart</button>
-    <button class="btn bdet" onclick="det()">More details</button>
-  </div>
-</div>
-<script>
-function add(){{
-  var q=parseInt(document.getElementById('q{pid_safe}').value)||1;
-  window.parent.location.href = window.parent.location.href.split('?')[0] + '?act=add&pid={p["id"]}&pqty='+q;
-}}
-function det(){{
-  window.parent.location.href = window.parent.location.href.split('?')[0] + '?act=det&pid={p["id"]}';
-}}
-</script>
-</body></html>"""
-
-                    components.html(card_html, height=285, scrolling=False)
+                    # ── 3. Controls: qty + Add + Details (real Streamlit widgets) ──
+                    primary_image_url = img_list[0] if img_list else None
+                    c1, c2, c3 = st.columns([1, 2, 2])
+                    with c1:
+                        qty = st.number_input("Qty", min_value=1, max_value=20, value=1,
+                                              key=f"qty_{p['id']}",
+                                              label_visibility="collapsed")
+                    with c2:
+                        if st.button("🛒 Add", key=f"add_{p['id']}",
+                                     use_container_width=True, type="primary"):
+                            cart[p["id"]] = {
+                                "name":        p["name"],
+                                "price":       float(p["price"]) if p.get("price") is not None else None,
+                                "quantity":    int(qty),
+                                "image_url":   primary_image_url,
+                                "description": p.get("description") or "",
+                            }
+                            st.toast(f"✅ {p['name']} added!", icon="🛒")
+                    with c3:
+                        if st.button("Details", key=f"detail_{p['id']}",
+                                     use_container_width=True):
+                            st.session_state["detail_pid"] = p["id"]
+                            st.rerun()
 
                     for m in media:
                         if m.get("media_type") == "video":
