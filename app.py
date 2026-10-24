@@ -579,11 +579,8 @@ with tab_shop:
                         st.markdown(f'<span class="pc-price">{money(dp["price"])}</span>',
                                     unsafe_allow_html=True)
                 else:
-                    st.info("📞 Contact us for price")
-                    if settings.get("phone"):
-                        st.markdown(f'**Call/WhatsApp:** {settings["phone"]}')
-                    if settings.get("email"):
-                        st.markdown(f'**Email:** {settings["email"]}')
+                    st.markdown('<span class="pc-contact">📞 Contact for price</span>',
+                                unsafe_allow_html=True)
 
                 st.markdown("")
                 d_qty = st.number_input("Quantity", min_value=1, max_value=20, value=1, key="detail_qty")
@@ -609,90 +606,152 @@ with tab_shop:
                 st.rerun()
 
     else:
-        # ── Normal grid ───────────────────────────────────────
-        cols = st.columns(3, gap="medium")
-        for idx, p in enumerate(products):
-            with cols[idx % 3]:
-                try:
-                    media = (db.table("product_media")
-                               .select("id,file_url,media_type,caption,is_primary,sort_order")
-                               .eq("product_id", p["id"]).order("sort_order")
-                               .execute().data or [])
-                except Exception:
-                    media = []
+        # ── Product grid ─────────────────────────────────────
+        # Each card is a self-contained iframe (components.html).
+        # This bypasses Streamlit's HTML sanitiser entirely — no raw tags ever.
 
-                primary_image_url = next(
-                    (m["file_url"] for m in media if m.get("media_type") == "image" and m.get("is_primary")),
-                    next((m["file_url"] for m in media if m.get("media_type") == "image"), None)
-                )
-                on_sale = (
-                    p.get("original_price") is not None and p.get("price") is not None
-                    and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
-                )
-                img_count = len([m for m in media if m.get("media_type") == "image"])
+        # Pre-fetch all media in one query
+        all_product_ids = [p["id"] for p in products]
+        media_by_product: dict = {pid: [] for pid in all_product_ids}
+        try:
+            if all_product_ids:
+                all_media = (db.table("product_media")
+                               .select("product_id,file_url,media_type,is_primary,sort_order")
+                               .in_("product_id", all_product_ids)
+                               .order("sort_order").execute().data or [])
+                for m in all_media:
+                    media_by_product[m["product_id"]].append(m)
+        except Exception:
+            pass
 
-                # ── card top ──
-                st.markdown('<div class="pc-outer">', unsafe_allow_html=True)
+        # Handle iframe button actions (set via query_params from JS postMessage)
+        _act = st.query_params.get("act")
+        _pid = st.query_params.get("pid")
+        _qty = int(st.query_params.get("pqty", "1") or "1")
+        if _act and _pid:
+            # find product
+            _prod = next((p for p in products if p["id"] == _pid), None)
+            if _act == "add" and _prod:
+                # find image
+                _media = media_by_product.get(_pid, [])
+                _img   = next((m["file_url"] for m in _media if m.get("media_type")=="image"), None)
+                cart[_pid] = {
+                    "name":        _prod["name"],
+                    "price":       float(_prod["price"]) if _prod.get("price") is not None else None,
+                    "quantity":    _qty,
+                    "image_url":   _img,
+                    "description": _prod.get("description") or "",
+                }
+                st.query_params.clear()
+                st.toast(f"✅ {_prod['name']} added!", icon="🛒")
+                st.rerun()
+            elif _act == "det" and _prod:
+                st.session_state["detail_pid"] = _pid
+                st.query_params.clear()
+                st.rerun()
 
-                # Carousel / single image
-                if img_count > 0:
-                    car_src = carousel_iframe(media, height=240)
-                    iframe_h = 240 + (28 if img_count > 1 else 4)
-                    components.html(car_src, height=iframe_h, scrolling=False)
+        # 2-column layout (works on all screen sizes)
+        col_pairs = [products[i:i+2] for i in range(0, len(products), 2)]
 
-                # Card body
-                cat_html = (f'<span class="pc-cat">{p["category"]}</span>'
-                            if p.get("category") else "")
-                name_safe = p["name"].replace("<","&lt;").replace(">","&gt;")
-                desc_safe = ((p.get("description") or "")[:80]).replace("<","&lt;").replace(">","&gt;")
-                if len(p.get("description") or "") > 80:
-                    desc_safe += "…"
+        for pair in col_pairs:
+            cols = st.columns(len(pair), gap="small")
+            for col, p in zip(cols, pair):
+                with col:
+                    media = media_by_product.get(p["id"], [])
+                    img_list = [m["file_url"] for m in media if m.get("media_type") == "image"]
+                    primary_image_url = img_list[0] if img_list else None
+                    on_sale = (
+                        p.get("original_price") is not None and p.get("price") is not None
+                        and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
+                    )
 
-                if p.get("price") is not None:
-                    if on_sale:
-                        pct = sale_pct(p["original_price"], p["price"])
-                        price_html = (f'<span class="badge-sale">🔥 {pct}</span>'
-                                      f'<br><span class="pc-price">{money(p["price"])}</span>'
-                                      f'<span class="pc-orig">{money(p["original_price"])}</span>')
+                    # ── Build card ──────────────────────────
+                    name_esc = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
+                    img_src  = img_list[0] if img_list else ""
+                    img_html = (
+                        f'<img src="{img_src}" style="width:100%;height:180px;'
+                        f'object-fit:cover;display:block;" loading="lazy" alt="{name_esc}"/>'
+                        if img_src else
+                        '<div style="height:180px;background:#f1f5f9;display:flex;'
+                        'align-items:center;justify-content:center;font-size:2.5rem;">🖼️</div>'
+                    )
+
+                    if p.get("price") is not None:
+                        if on_sale:
+                            pct = sale_pct(p["original_price"], p["price"])
+                            price_html = (
+                                f'<span style="background:linear-gradient(90deg,#ef4444,#f97316);'
+                                f'color:#fff;font-size:.6rem;font-weight:700;border-radius:20px;'
+                                f'padding:2px 6px;margin-right:4px;vertical-align:middle;">🔥{pct}</span>'
+                                f'<span style="font-size:.95rem;font-weight:800;color:#2563eb;'
+                                f'vertical-align:middle;">{money(p["price"])}</span>'
+                                f'<span style="font-size:.7rem;color:#94a3b8;text-decoration:line-through;'
+                                f'margin-left:4px;vertical-align:middle;">{money(p["original_price"])}</span>'
+                            )
+                        else:
+                            price_html = (
+                                f'<span style="font-size:.95rem;font-weight:800;color:#2563eb;">'
+                                f'{money(p["price"])}</span>'
+                            )
                     else:
-                        price_html = f'<span class="pc-price">{money(p["price"])}</span>'
-                else:
-                    price_html = '<span class="pc-contact">📞 Contact for price</span>'
+                        price_html = '<span style="font-size:.8rem;color:#64748b;font-style:italic;">📞 Contact</span>'
 
-                st.markdown(f"""
-                <div class="pc-body">
-                  {cat_html}
-                  <p class="pc-name">{name_safe}</p>
-                  <p class="pc-desc">{desc_safe}</p>
-                  <div>{price_html}</div>
-                </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    pid_safe = p["id"].replace("-","_")
 
-                # Controls: qty + add to cart + view details
-                c1, c2 = st.columns([1, 2])
-                with c1:
-                    qty = st.number_input("Qty", min_value=1, max_value=20, value=1,
-                                          key=f"qty_{p['id']}", label_visibility="collapsed")
-                with c2:
-                    if st.button("🛒 Add to cart", key=f"add_{p['id']}", use_container_width=True):
-                        cart[p["id"]] = {
-                            "name":        p["name"],
-                            "price":       float(p["price"]) if p.get("price") is not None else None,
-                            "quantity":    int(qty),
-                            "image_url":   primary_image_url,
-                            "description": p.get("description") or "",
-                        }
-                        st.toast(f"✅ {p['name']} added!", icon="🛒")
+                    card_html = f"""<!DOCTYPE html><html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+html,body{{height:100%;}}
+body{{font-family:'Segoe UI',system-ui,sans-serif;background:#fff;
+      border-radius:14px;border:1px solid #e2e8f0;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;
+      display:flex;flex-direction:column;}}
+.img-wrap{{flex-shrink:0;}}
+.info{{padding:8px 10px 10px;flex:1;display:flex;flex-direction:column;gap:4px;}}
+.nameprice{{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}}
+.price{{font-size:.92rem;line-height:1.4;white-space:nowrap;flex-shrink:0;}}
+.name{{font-size:.88rem;font-weight:700;color:#1e293b;line-height:1.3;
+       display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1;}}
+.row{{display:flex;gap:5px;align-items:center;margin-top:auto;padding-top:6px;}}
+.qty{{width:44px;height:32px;border:1px solid #e2e8f0;border-radius:7px;
+      text-align:center;font-size:.88rem;font-weight:600;color:#1e293b;
+      background:#f8fafc;outline:none;}}
+.qty:focus{{border-color:#2563eb;}}
+.btn{{flex:1;height:32px;border:none;border-radius:7px;font-size:.78rem;
+      font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap;}}
+.badd{{background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;}}
+.bdet{{background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;}}
+.btn:active{{opacity:.75;transform:scale(.97);}}
+</style></head><body>
+<div class="img-wrap">{img_html}</div>
+<div class="info">
+  <div class="nameprice">
+    <span class="name">{name_esc}</span>
+    <span class="price">{price_html}</span>
+  </div>
+  <div class="row">
+    <input class="qty" type="number" id="q{pid_safe}" value="1" min="1" max="20"/>
+    <button class="btn badd" onclick="add()">🛒 Add to cart</button>
+    <button class="btn bdet" onclick="det()">More details</button>
+  </div>
+</div>
+<script>
+function add(){{
+  var q=parseInt(document.getElementById('q{pid_safe}').value)||1;
+  window.parent.location.href = window.parent.location.href.split('?')[0] + '?act=add&pid={p["id"]}&pqty='+q;
+}}
+function det(){{
+  window.parent.location.href = window.parent.location.href.split('?')[0] + '?act=det&pid={p["id"]}';
+}}
+</script>
+</body></html>"""
 
-                if st.button("🔍 View details", key=f"detail_{p['id']}", use_container_width=True):
-                    st.session_state["detail_pid"] = p["id"]
-                    st.rerun()
+                    components.html(card_html, height=285, scrolling=False)
 
-                # Videos
-                for m in media:
-                    if m.get("media_type") == "video":
-                        st.video(m["file_url"])
+                    for m in media:
+                        if m.get("media_type") == "video":
+                            st.video(m["file_url"])
 
     # ── Cart ─────────────────────────────────────────────────
     st.markdown('<hr class="nice-divider"/>', unsafe_allow_html=True)
