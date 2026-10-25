@@ -18,7 +18,7 @@ from store_utils import (
 st.set_page_config(
     page_title="Little Store",
     page_icon="🛍️",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed",
 )
 
@@ -30,14 +30,15 @@ st.markdown("""
 /* ── Base ── */
 html, body, [class*="css"] {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: #f8fafc;
+    background: #faf8ff;
 }
-/* Comfortable padding — centered layout */
+/* Comfortable padding — wide layout capped at 800px for readability */
 .block-container {
     padding-top: 0 !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    max-width: 960px !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
 }
 /* hide sidebar toggle */
 [data-testid="collapsedControl"] { display:none !important; }
@@ -46,42 +47,42 @@ html, body, [class*="css"] {
 /* ── Top navbar ── */
 .topnav {
     display:flex; align-items:center; justify-content:space-between;
-    background:#0f172a;
+    background:linear-gradient(90deg,#4c1d95 0%,#7c3aed 100%);
     padding:0 20px; height:52px;
     border-radius:0 0 14px 14px;
     margin-bottom:18px;
-    box-shadow:0 4px 18px rgba(0,0,0,.22);
+    box-shadow:0 4px 18px rgba(124,58,237,.35);
 }
 .topnav-left  { display:flex; align-items:center; gap:10px; }
 .topnav-logo  { height:32px; width:32px; border-radius:6px; object-fit:cover; }
 .topnav-brand { color:#fff; font-size:1.05rem; font-weight:800; white-space:nowrap; }
 .topnav-links { display:flex; gap:2px; }
 .topnav-links a {
-    color:rgba(255,255,255,.7); text-decoration:none;
+    color:rgba(255,255,255,.75); text-decoration:none;
     padding:5px 13px; border-radius:8px;
     font-size:.875rem; font-weight:500;
     transition:background .15s,color .15s;
 }
-.topnav-links a:hover  { background:rgba(255,255,255,.1); color:#fff; }
-.topnav-links a.active { background:#2563eb; color:#fff; font-weight:700; }
+.topnav-links a:hover  { background:rgba(255,255,255,.15); color:#fff; }
+.topnav-links a.active { background:rgba(255,255,255,.25); color:#fff; font-weight:700; }
 .topnav-cart {
-    color:#fff; background:rgba(37,99,235,.65); border-radius:20px;
+    color:#fff; background:rgba(255,255,255,.2); border-radius:20px;
     padding:4px 13px; font-size:.82rem; font-weight:700; white-space:nowrap;
 }
 
 /* ── Contact strip ── */
 .contact-bar {
-    background:#f0fdf4; border:1px solid #bbf7d0;
+    background:#f5f3ff; border:1px solid #ddd6fe;
     border-radius:10px; padding:7px 16px;
-    font-size:.83rem; color:#166534;
+    font-size:.83rem; color:#5b21b6;
     display:flex; gap:18px; align-items:center;
     flex-wrap:wrap; margin-bottom:14px; line-height:1.6;
 }
-.contact-bar a { color:#166534; font-weight:600; text-decoration:none; }
+.contact-bar a { color:#7c3aed; font-weight:600; text-decoration:none; }
 
 /* ── Hero ── */
 .hero {
-    background:linear-gradient(135deg,#2563eb 0%,#7c3aed 100%);
+    background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 60%,#a855f7 100%);
     border-radius:14px; padding:22px 26px 18px;
     margin-bottom:16px; color:#fff;
 }
@@ -89,19 +90,19 @@ html, body, [class*="css"] {
 .hero-logo   { height:52px; width:52px; border-radius:10px; object-fit:cover;
                border:2px solid rgba(255,255,255,.35); flex-shrink:0; }
 .hero h1 { margin:0 0 3px; font-size:1.5rem; font-weight:800; }
-.hero p  { margin:0; font-size:.9rem; opacity:.82; }
+.hero p  { margin:0; font-size:.9rem; opacity:.85; }
 
 /* ── Section title ── */
 .section-title {
-    font-size:1.05rem; font-weight:700; color:#1e293b;
-    margin:18px 0 10px; border-left:3px solid #2563eb; padding-left:9px;
+    font-size:1.05rem; font-weight:700; color:#4c1d95;
+    margin:18px 0 10px; border-left:3px solid #7c3aed; padding-left:9px;
 }
 
 /* ── Filter bar ── */
 .filter-bar {
-    background:#fff; border:1px solid #e2e8f0;
+    background:#fff; border:1px solid #ddd6fe;
     border-radius:10px; padding:8px 12px; margin-bottom:14px;
-    box-shadow:0 1px 4px rgba(0,0,0,.04);
+    box-shadow:0 1px 4px rgba(124,58,237,.08);
 }
 
 /* ── Product card ── */
@@ -112,121 +113,114 @@ html, body, [class*="css"] {
     transition:box-shadow .2s,transform .2s;
 }
 .pc-outer:hover {
-    box-shadow:0 8px 24px rgba(37,99,235,.12);
+    box-shadow:0 8px 24px rgba(124,58,237,.15);
     transform:translateY(-2px);
 }
 .pc-body { padding:10px 13px 14px; }
 .pc-cat  {
-    display:inline-block; background:#eff6ff; color:#2563eb;
+    display:inline-block; background:#f5f3ff; color:#7c3aed;
     font-size:.68rem; font-weight:700; border-radius:20px;
-    padding:2px 9px; margin-bottom:6px; letter-spacing:.2px;
+    padding:2px 9px; margin-bottom:6px;
 }
 .pc-name {
-    font-size:.95rem; font-weight:700; color:#1e293b;
+    font-size:.95rem; font-weight:700; color:#1e1b4b;
     margin:0 0 4px; line-height:1.35;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden; min-height:2.55rem;
 }
-.pc-desc {
-    font-size:.78rem; color:#64748b; margin:0 0 10px;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-    overflow:hidden; min-height:2.3rem; line-height:1.5;
-}
-.pc-price   { font-size:1.15rem; font-weight:800; color:#2563eb; }
+.pc-price   { font-size:1.15rem; font-weight:800; color:#7c3aed; }
 .pc-orig    { font-size:.78rem; color:#94a3b8; text-decoration:line-through; margin-left:5px; }
 .pc-contact { font-size:.85rem; color:#64748b; font-style:italic; }
 .badge-sale {
     display:inline-block;
     background:linear-gradient(90deg,#ef4444,#f97316);
     color:#fff; font-size:.65rem; font-weight:700;
-    border-radius:20px; padding:2px 8px; margin-right:4px; letter-spacing:.3px;
+    border-radius:20px; padding:2px 8px; margin-right:4px;
 }
 
 /* ── Cart ── */
 .total-box {
-    background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
-    border:1px solid #bfdbfe; border-radius:12px;
+    background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);
+    border:1px solid #ddd6fe; border-radius:12px;
     padding:12px 18px; margin:10px 0;
 }
-.total-label  { font-size:.8rem; color:#64748b; margin:0; }
-.total-amount { font-size:1.6rem; font-weight:800; color:#1d4ed8; margin:0; }
+.total-label  { font-size:.8rem; color:#6d28d9; margin:0; }
+.total-amount { font-size:1.6rem; font-weight:800; color:#4c1d95; margin:0; }
 
 /* ── Order card ── */
 .order-card {
-    background:#fff; border:1.5px solid #bfdbfe;
+    background:#fff; border:1.5px solid #ddd6fe;
     border-radius:14px; padding:18px;
-    box-shadow:0 2px 12px rgba(37,99,235,.07);
+    box-shadow:0 2px 12px rgba(124,58,237,.08);
 }
 
 /* ── Admin stat ── */
 .admin-stat {
-    background:#fff; border:1px solid #e2e8f0;
+    background:#fff; border:1px solid #ddd6fe;
     border-radius:12px; padding:14px 16px; text-align:center;
     box-shadow:0 1px 4px rgba(0,0,0,.04);
 }
-.admin-stat .sn { font-size:1.7rem; font-weight:800; color:#2563eb; }
-.admin-stat .sl { font-size:.78rem; color:#64748b; margin-top:2px; }
+.admin-stat .sn { font-size:1.7rem; font-weight:800; color:#7c3aed; }
+.admin-stat .sl { font-size:.78rem; color:#6d28d9; margin-top:2px; }
 
 /* ── Status pills ── */
 .status-pill { display:inline-block; border-radius:20px; padding:2px 10px; font-size:.74rem; font-weight:700; }
 .status-pending    { background:#fef3c7; color:#92400e; }
-.status-confirmed  { background:#dbeafe; color:#1e40af; }
-.status-processing { background:#ede9fe; color:#5b21b6; }
+.status-confirmed  { background:#ede9fe; color:#5b21b6; }
+.status-processing { background:#f3e8ff; color:#6d28d9; }
 .status-shipped    { background:#d1fae5; color:#065f46; }
 .status-delivered  { background:#bbf7d0; color:#14532d; }
 .status-cancelled  { background:#fee2e2; color:#991b1b; }
 
 /* ── Misc ── */
-.nice-divider { border:none; border-top:1px solid #e2e8f0; margin:20px 0; }
-.empty-cart   { text-align:center; padding:32px 0; color:#94a3b8; font-size:.95rem; }
+.nice-divider { border:none; border-top:1px solid #ddd6fe; margin:20px 0; }
+.empty-cart   { text-align:center; padding:32px 0; color:#a78bfa; font-size:.95rem; }
 
-/* ── Streamlit button overrides ── */
+/* ── Buttons ── */
 .stButton>button[kind="primary"] {
-    background:linear-gradient(90deg,#2563eb,#7c3aed) !important;
+    background:linear-gradient(90deg,#7c3aed,#a855f7) !important;
     border:none !important; border-radius:8px !important;
     font-weight:600 !important; letter-spacing:.2px;
+    color:#fff !important;
 }
 .stButton>button[kind="secondary"] {
     border-radius:8px !important; font-weight:500 !important;
+    border:1px solid #ddd6fe !important; color:#7c3aed !important;
 }
 .stDownloadButton>button {
     background:linear-gradient(90deg,#059669,#0d9488) !important;
     color:#fff !important; border:none !important;
     border-radius:8px !important; font-weight:600 !important;
 }
-/* tighten number inputs */
-[data-testid="stNumberInput"] { max-width:110px; }
+/* tighten column padding so 2 cols always fit on mobile */
+[data-testid="column"] { padding-left:3px !important; padding-right:3px !important; }
+[data-testid="stNumberInput"] { max-width:100%; }
 
-/* ── Nav tabs styled as dark navbar ── */
+/* ── Nav tabs — purple dark bar ── */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
-    background: #0f172a;
-    border-radius: 0 0 14px 14px;
-    padding: 6px 12px;
-    gap: 4px;
-    border-bottom: none !important;
-    margin-bottom: 16px;
+    background:linear-gradient(90deg,#4c1d95 0%,#6d28d9 100%);
+    border-radius:0 0 14px 14px;
+    padding:6px 12px; gap:4px;
+    border-bottom:none !important;
+    margin-bottom:16px;
 }
 [data-testid="stTabs"] [data-baseweb="tab"] {
-    color: rgba(255,255,255,.7) !important;
-    font-weight: 500 !important;
-    font-size: .88rem !important;
-    padding: 8px 16px !important;
-    border-radius: 8px !important;
-    border: none !important;
-    background: transparent !important;
+    color:rgba(255,255,255,.75) !important;
+    font-weight:500 !important; font-size:.88rem !important;
+    padding:8px 16px !important; border-radius:8px !important;
+    border:none !important; background:transparent !important;
 }
 [data-testid="stTabs"] [data-baseweb="tab"]:hover {
-    background: rgba(255,255,255,.1) !important;
-    color: #fff !important;
+    background:rgba(255,255,255,.15) !important; color:#fff !important;
 }
 [data-testid="stTabs"] [aria-selected="true"] {
-    background: #2563eb !important;
-    color: #fff !important;
-    font-weight: 700 !important;
+    background:rgba(255,255,255,.25) !important;
+    color:#fff !important; font-weight:700 !important;
 }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"],
 [data-testid="stTabs"] [data-baseweb="tab-border"] { display:none !important; }
 </style>
+
 """, unsafe_allow_html=True)
 
 
@@ -422,7 +416,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ── Navigation tabs (always visible, always work) ─────────────
-tab_shop, tab_order, tab_admin = st.tabs(["🏪 Shop", "📦 My Order", "🔧 Admin"])
+tab_shop, tab_order, tab_admin = st.tabs(["🏪 Shop", "📦 My Order", "🔐 Login"])
 
 # ═══════════════════════════════════════════════════════════════
 # TAB: SHOP
@@ -622,139 +616,126 @@ with tab_shop:
         except Exception:
             pass
 
-        # ── Single components.html grid — guaranteed 2 cols every screen ──
-        # All cards rendered in one iframe: CSS grid always forces 2 columns.
-        # Buttons set query params → Streamlit handles cart/detail on rerun.
+        # ── 2-col grid: render pairs in a single iframe per row ──
+        # Each iframe holds exactly 2 cards side-by-side using CSS grid.
+        # This is the only approach that guarantees 2-per-row on any screen.
+        # Buttons below the iframe are real st.button widgets that handle logic.
 
-        # Handle button actions from the grid iframe
-        _act = st.query_params.get("act")
-        _pid = st.query_params.get("pid")
-        _qty = int(st.query_params.get("pqty", "1") or "1")
-        if _act == "add" and _pid:
-            _prod = next((p for p in products if p["id"] == _pid), None)
-            if _prod:
-                _img = next((m["file_url"] for m in media_by_product.get(_pid, [])
-                             if m.get("media_type") == "image"), None)
-                cart[_pid] = {
-                    "name":        _prod["name"],
-                    "price":       float(_prod["price"]) if _prod.get("price") is not None else None,
-                    "quantity":    _qty,
-                    "image_url":   _img,
-                    "description": _prod.get("description") or "",
-                }
-                st.query_params.clear()
-                st.session_state["scroll_to_cart"] = True
-                st.rerun()
-        elif _act == "det" and _pid:
-            st.session_state["detail_pid"] = _pid
-            st.query_params.clear()
-            st.rerun()
+        padded_p = list(products)
+        if len(padded_p) % 2:
+            padded_p.append(None)
+        pairs = [padded_p[i:i+2] for i in range(0, len(padded_p), 2)]
 
-        # Build one big HTML page with all cards in a 2-col CSS grid
-        cards_html = ""
-        for p in products:
-            if p is None:
-                continue
-            media    = media_by_product.get(p["id"], [])
-            img_list = [m["file_url"] for m in media if m.get("media_type") == "image"]
-            on_sale  = (
-                p.get("original_price") is not None and p.get("price") is not None
-                and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
-            )
-            name_esc = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
-            pid_js   = p["id"]
-            pid_safe = p["id"].replace("-","_")
+        for pair in pairs:
+            # Build the 2-card HTML row
+            cells = ""
+            for p in pair:
+                if p is None:
+                    cells += '<div class="card empty"></div>'
+                    continue
+                media    = media_by_product.get(p["id"], [])
+                img_list = [m["file_url"] for m in media if m.get("media_type") == "image"]
+                n_imgs   = len(img_list)
+                on_sale  = (
+                    p.get("original_price") is not None and p.get("price") is not None
+                    and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
+                )
+                name_esc = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
+                img_src  = img_list[0] if img_list else ""
 
-            # Image: first image as static img (no carousel in grid — keep it simple & fast)
-            img_src = img_list[0] if img_list else ""
-            n_imgs  = len(img_list)
-            if img_src:
-                img_tag = (f'<img src="{img_src}" class="cimg" alt="{name_esc}">'
-                           + (f'<span class="badge-count">{n_imgs} 📷</span>' if n_imgs > 1 else ""))
-                img_wrap = f'<div class="img-wrap">{img_tag}</div>'
-            else:
-                img_wrap = '<div class="img-wrap no-img">🖼️</div>'
+                img_tag = (
+                    f'<div class="img-wrap"><img src="{img_src}" alt="{name_esc}">'
+                    + (f'<span class="nbadge">{n_imgs}📷</span>' if n_imgs > 1 else "")
+                    + '</div>'
+                ) if img_src else '<div class="img-wrap no-img">�️</div>'
 
-            # Price
-            if p.get("price") is not None:
-                if on_sale:
-                    pct = sale_pct(p["original_price"], p["price"])
-                    pr = (f'<span class="sale-badge">🔥{pct}</span>'
-                          f'<span class="price">{money(p["price"])}</span>'
-                          f'<span class="orig">{money(p["original_price"])}</span>')
+                if p.get("price") is not None:
+                    if on_sale:
+                        pct = sale_pct(p["original_price"], p["price"])
+                        pr = (f'<span class="sbadge">🔥{pct}</span>'
+                              f'<span class="price">{money(p["price"])}</span>'
+                              f'<span class="orig">{money(p["original_price"])}</span>')
+                    else:
+                        pr = f'<span class="price">{money(p["price"])}</span>'
                 else:
-                    pr = f'<span class="price">{money(p["price"])}</span>'
-            else:
-                pr = '<span class="contact">📞 Contact</span>'
+                    pr = '<span class="contact">📞 Contact</span>'
 
-            cards_html += f"""
-<div class="card">
-  {img_wrap}
+                cells += f"""<div class="card">
+  {img_tag}
   <div class="info">
-    <div class="name">{name_esc}</div>
-    <div class="pr-row">{pr}</div>
-  </div>
-  <div class="btns">
-    <input class="qty" type="number" id="q{pid_safe}" value="1" min="1" max="20">
-    <button class="badd" onclick="add('{pid_js}','{pid_safe}')">🛒 Add</button>
-    <button class="bdet" onclick="det('{pid_js}')">Details</button>
+    <div class="nm">{name_esc}</div>
+    <div class="pr">{pr}</div>
   </div>
 </div>"""
 
-        # Total card height estimate for iframe
-        n_rows   = (len([p for p in products if p]) + 1) // 2
-        grid_h   = n_rows * 310 + 20
-
-        grid_html = f"""<!DOCTYPE html><html><head>
+            row_html = f"""<!DOCTYPE html><html><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box;}}
-body{{font-family:'Segoe UI',system-ui,sans-serif;background:transparent;overflow-x:hidden;}}
-.grid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:2px;}}
-.card{{background:#fff;border-radius:12px;border:1px solid #e2e8f0;
-       box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;
-       display:flex;flex-direction:column;}}
+body{{font-family:'Segoe UI',sans-serif;background:transparent;overflow:hidden;}}
+.row{{display:grid;grid-template-columns:1fr 1fr;gap:8px;}}
+.card{{background:#fff;border-radius:10px;border:1px solid #e2e8f0;
+       overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);}}
+.card.empty{{visibility:hidden;}}
 .img-wrap{{position:relative;}}
-.cimg{{width:100%;height:150px;object-fit:cover;display:block;}}
-.no-img{{height:150px;background:#f1f5f9;display:flex;align-items:center;
-          justify-content:center;font-size:2rem;}}
-.badge-count{{position:absolute;bottom:5px;right:6px;background:rgba(0,0,0,.5);
-              color:#fff;font-size:.6rem;border-radius:8px;padding:1px 6px;}}
-.info{{padding:7px 8px 4px;flex:1;}}
-.name{{font-size:.82rem;font-weight:700;color:#1e293b;
-       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}}
-.pr-row{{font-size:.78rem;}}
-.price{{font-weight:800;color:#2563eb;font-size:.88rem;}}
-.orig{{color:#94a3b8;text-decoration:line-through;font-size:.7rem;margin-left:3px;}}
-.sale-badge{{background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;
-             font-size:.58rem;font-weight:700;border-radius:20px;
-             padding:1px 5px;margin-right:3px;}}
-.contact{{color:#64748b;font-style:italic;font-size:.75rem;}}
-.btns{{display:flex;gap:4px;padding:6px 8px 8px;align-items:center;}}
-.qty{{width:36px;height:28px;border:1px solid #d1d5db;border-radius:6px;
-      text-align:center;font-size:.82rem;font-weight:600;background:#f9fafb;
-      color:#1e293b;outline:none;flex-shrink:0;}}
-.badd,.bdet{{flex:1;height:28px;border:none;border-radius:6px;
-             font-size:.7rem;font-weight:600;cursor:pointer;white-space:nowrap;}}
-.badd{{background:linear-gradient(90deg,#2563eb,#7c3aed);color:#fff;}}
-.bdet{{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}}
-.badd:active,.bdet:active{{opacity:.75;}}
+img{{width:100%;height:120px;object-fit:cover;display:block;}}
+.no-img{{height:120px;background:#f1f5f9;display:flex;align-items:center;
+          justify-content:center;font-size:1.8rem;}}
+.nbadge{{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.5);
+          color:#fff;font-size:.55rem;border-radius:7px;padding:1px 5px;}}
+.info{{padding:6px 7px 7px;}}
+.nm{{font-size:.78rem;font-weight:700;color:#1e1b4b;white-space:nowrap;
+     overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}}
+.pr{{font-size:.75rem;}}
+.price{{font-weight:800;color:#7c3aed;font-size:.85rem;}}
+.orig{{color:#94a3b8;text-decoration:line-through;font-size:.68rem;margin-left:2px;}}
+.sbadge{{background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;
+          font-size:.55rem;font-weight:700;border-radius:20px;
+          padding:1px 5px;margin-right:2px;}}
+.contact{{color:#64748b;font-style:italic;font-size:.72rem;}}
 </style></head><body>
-<div class="grid">{cards_html}</div>
-<script>
-var base = window.parent.location.href.split('?')[0];
-function add(pid, safe){{
-  var q = parseInt(document.getElementById('q'+safe).value)||1;
-  window.parent.location.replace(base+'?act=add&pid='+pid+'&pqty='+q);
-}}
-function det(pid){{
-  window.parent.location.replace(base+'?act=det&pid='+pid);
-}}
-</script>
+<div class="row">{cells}</div>
 </body></html>"""
 
-        components.html(grid_html, height=grid_h, scrolling=False)
+            # Height: image(120) + info(~55) + padding
+            components.html(row_html, height=185, scrolling=False)
+
+            # Real Streamlit buttons — one row per pair, 2 cols per product
+            btn_cols = st.columns(2, gap="small")
+            for bc, p in zip(btn_cols, pair):
+                if p is None:
+                    bc.empty()
+                    continue
+                media       = media_by_product.get(p["id"], [])
+                img_list    = [m["file_url"] for m in media if m.get("media_type") == "image"]
+                primary_url = img_list[0] if img_list else None
+                with bc:
+                    qty = st.number_input("Qty", min_value=1, max_value=20, value=1,
+                                          key=f"qty_{p['id']}",
+                                          label_visibility="collapsed")
+                    ca, cd = st.columns(2, gap="small")
+                    with ca:
+                        if st.button("🛒 Add", key=f"add_{p['id']}",
+                                     use_container_width=True, type="primary"):
+                            cart[p["id"]] = {
+                                "name":        p["name"],
+                                "price":       float(p["price"]) if p.get("price") is not None else None,
+                                "quantity":    int(qty),
+                                "image_url":   primary_url,
+                                "description": p.get("description") or "",
+                            }
+                            st.session_state["scroll_to_cart"] = True
+                            st.rerun()
+                    with cd:
+                        if st.button("Details", key=f"detail_{p['id']}",
+                                     use_container_width=True):
+                            st.session_state["detail_pid"] = p["id"]
+                            st.rerun()
+
+                    for m in media:
+                        if m.get("media_type") == "video":
+                            st.video(m["file_url"])
 
     # ── Cart ─────────────────────────────────────────────────
     st.markdown('<hr class="nice-divider"/>', unsafe_allow_html=True)
