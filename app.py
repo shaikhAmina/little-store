@@ -196,6 +196,30 @@ html, body, [class*="css"] {
 [data-testid="column"] { padding-left:3px !important; padding-right:3px !important; }
 [data-testid="stNumberInput"] { max-width:100%; }
 
+@media (max-width: 640px) {
+    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:6px !important;
+    }
+    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        width:auto !important;
+        min-width:0 !important;
+        flex:none !important;
+    }
+    [class*="st-key-product-row-"] [data-testid="stImage"] img {
+        height:100px !important;
+        object-fit:contain !important;
+    }
+    [class*="st-key-product-row-"] [data-testid="stVerticalBlock"] {
+        gap:.35rem !important;
+    }
+    [class*="st-key-product-row-"] .stButton button {
+        padding:.35rem .2rem !important;
+        font-size:.75rem !important;
+    }
+}
+
 /* ── Nav tabs — purple dark bar ── */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
     background:linear-gradient(90deg,#4c1d95 0%,#6d28d9 100%);
@@ -616,107 +640,62 @@ with tab_shop:
         except Exception:
             pass
 
-        # ── 2-col grid: render pairs in a single iframe per row ──
-        # Each iframe holds exactly 2 cards side-by-side using CSS grid.
-        # This is the only approach that guarantees 2-per-row on any screen.
-        # Buttons below the iframe are real st.button widgets that handle logic.
+        # Keep each product's image, details, and controls together in one card.
 
         padded_p = list(products)
         if len(padded_p) % 2:
             padded_p.append(None)
         pairs = [padded_p[i:i+2] for i in range(0, len(padded_p), 2)]
 
-        for pair in pairs:
-            # Build the 2-card HTML row
-            cells = ""
-            for p in pair:
-                if p is None:
-                    cells += '<div class="card empty"></div>'
-                    continue
-                media    = media_by_product.get(p["id"], [])
-                img_list = [m["file_url"] for m in media if m.get("media_type") == "image"]
-                n_imgs   = len(img_list)
-                on_sale  = (
-                    p.get("original_price") is not None and p.get("price") is not None
-                    and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
-                )
-                name_esc = (p["name"] or "").replace("<","&lt;").replace(">","&gt;")
-                img_src  = img_list[0] if img_list else ""
+        for row_index, pair in enumerate(pairs):
+            with st.container(key=f"product-row-{row_index}"):
+                product_cols = st.columns(2, gap="small")
+                for col, p in zip(product_cols, pair):
+                    if p is None:
+                        continue
+                    media       = media_by_product.get(p["id"], [])
+                    img_list    = [m["file_url"] for m in media if m.get("media_type") == "image"]
+                    primary_url = img_list[0] if img_list else None
+                    with col.container(border=True):
+                        if primary_url:
+                            st.image(primary_url, use_container_width=True)
+                        else:
+                            st.markdown(
+                                '<div style="height:120px;background:#f1f5f9;border-radius:8px;'
+                                'display:flex;align-items:center;justify-content:center;font-size:1.8rem">'
+                                '🛍️</div>',
+                                unsafe_allow_html=True,
+                            )
 
-                img_tag = (
-                    f'<div class="img-wrap"><img src="{img_src}" alt="{name_esc}">'
-                    + (f'<span class="nbadge">{n_imgs}📷</span>' if n_imgs > 1 else "")
-                    + '</div>'
-                ) if img_src else '<div class="img-wrap no-img">�️</div>'
+                        st.markdown(f"**{p['name']}**")
+                        on_sale = (
+                            p.get("original_price") is not None and p.get("price") is not None
+                            and Decimal(str(p["original_price"])) > Decimal(str(p["price"]))
+                        )
+                        if p.get("price") is not None:
+                            if on_sale:
+                                pct = sale_pct(p["original_price"], p["price"])
+                                st.markdown(
+                                    f'<span class="badge-sale">🔥 {pct}</span> '
+                                    f'<span class="pc-price">{money(p["price"])}</span> '
+                                    f'<span class="pc-orig">{money(p["original_price"])}</span>',
+                                    unsafe_allow_html=True,
+                                )
+                            else:
+                                st.markdown(
+                                    f'<span class="pc-price">{money(p["price"])}</span>',
+                                    unsafe_allow_html=True,
+                                )
+                        else:
+                            st.markdown(
+                                '<span class="pc-contact">📞 Contact for price</span>',
+                                unsafe_allow_html=True,
+                            )
 
-                if p.get("price") is not None:
-                    if on_sale:
-                        pct = sale_pct(p["original_price"], p["price"])
-                        pr = (f'<span class="sbadge">🔥{pct}</span>'
-                              f'<span class="price">{money(p["price"])}</span>'
-                              f'<span class="orig">{money(p["original_price"])}</span>')
-                    else:
-                        pr = f'<span class="price">{money(p["price"])}</span>'
-                else:
-                    pr = '<span class="contact">📞 Contact</span>'
-
-                cells += f"""<div class="card">
-  {img_tag}
-  <div class="info">
-    <div class="nm">{name_esc}</div>
-    <div class="pr">{pr}</div>
-  </div>
-</div>"""
-
-            row_html = f"""<!DOCTYPE html><html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-*{{margin:0;padding:0;box-sizing:border-box;}}
-body{{font-family:'Segoe UI',sans-serif;background:transparent;overflow:hidden;}}
-.row{{display:grid;grid-template-columns:1fr 1fr;gap:8px;}}
-.card{{background:#fff;border-radius:10px;border:1px solid #e2e8f0;
-       overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);}}
-.card.empty{{visibility:hidden;}}
-.img-wrap{{position:relative;}}
-img{{width:100%;height:120px;object-fit:cover;display:block;}}
-.no-img{{height:120px;background:#f1f5f9;display:flex;align-items:center;
-          justify-content:center;font-size:1.8rem;}}
-.nbadge{{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.5);
-          color:#fff;font-size:.55rem;border-radius:7px;padding:1px 5px;}}
-.info{{padding:6px 7px 7px;}}
-.nm{{font-size:.78rem;font-weight:700;color:#1e1b4b;white-space:nowrap;
-     overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;}}
-.pr{{font-size:.75rem;}}
-.price{{font-weight:800;color:#7c3aed;font-size:.85rem;}}
-.orig{{color:#94a3b8;text-decoration:line-through;font-size:.68rem;margin-left:2px;}}
-.sbadge{{background:linear-gradient(90deg,#ef4444,#f97316);color:#fff;
-          font-size:.55rem;font-weight:700;border-radius:20px;
-          padding:1px 5px;margin-right:2px;}}
-.contact{{color:#64748b;font-style:italic;font-size:.72rem;}}
-</style></head><body>
-<div class="row">{cells}</div>
-</body></html>"""
-
-            # Height: image(120) + info(~55) + padding
-            components.html(row_html, height=185, scrolling=False)
-
-            # Real Streamlit buttons — one row per pair, 2 cols per product
-            btn_cols = st.columns(2, gap="small")
-            for bc, p in zip(btn_cols, pair):
-                if p is None:
-                    bc.empty()
-                    continue
-                media       = media_by_product.get(p["id"], [])
-                img_list    = [m["file_url"] for m in media if m.get("media_type") == "image"]
-                primary_url = img_list[0] if img_list else None
-                with bc:
-                    qty = st.number_input("Qty", min_value=1, max_value=20, value=1,
-                                          key=f"qty_{p['id']}",
-                                          label_visibility="collapsed")
-                    ca, cd = st.columns(2, gap="small")
-                    with ca:
-                        if st.button("🛒 Add", key=f"add_{p['id']}",
+                        qty = st.number_input("Qty", min_value=1, max_value=20, value=1,
+                                              key=f"qty_{p['id']}",
+                                              label_visibility="collapsed")
+                        if st.button("🛒 Add to cart", key=f"add_{p['id']}",
                                      use_container_width=True, type="primary"):
                             cart[p["id"]] = {
                                 "name":        p["name"],
@@ -727,15 +706,15 @@ img{{width:100%;height:120px;object-fit:cover;display:block;}}
                             }
                             st.session_state["scroll_to_cart"] = True
                             st.rerun()
-                    with cd:
+
                         if st.button("Details", key=f"detail_{p['id']}",
                                      use_container_width=True):
                             st.session_state["detail_pid"] = p["id"]
                             st.rerun()
 
-                    for m in media:
-                        if m.get("media_type") == "video":
-                            st.video(m["file_url"])
+                        for m in media:
+                            if m.get("media_type") == "video":
+                                st.video(m["file_url"])
 
     # ── Cart ─────────────────────────────────────────────────
     st.markdown('<hr class="nice-divider"/>', unsafe_allow_html=True)
