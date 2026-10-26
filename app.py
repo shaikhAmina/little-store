@@ -32,12 +32,12 @@ html, body, [class*="css"] {
     font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     background: #faf8ff;
 }
-/* Comfortable padding — wide layout capped at 800px for readability */
+/* Give the catalogue room on desktop while keeping mobile cards compact. */
 .block-container {
-    padding-top: 0 !important;
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-    max-width: 800px !important;
+    padding-top: 1rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 1180px !important;
     margin: 0 auto !important;
 }
 /* hide sidebar toggle */
@@ -47,11 +47,11 @@ html, body, [class*="css"] {
 /* ── Top navbar ── */
 .topnav {
     display:flex; align-items:center; justify-content:space-between;
-    background:linear-gradient(90deg,#4c1d95 0%,#7c3aed 100%);
-    padding:0 20px; height:52px;
-    border-radius:0 0 14px 14px;
-    margin-bottom:18px;
-    box-shadow:0 4px 18px rgba(124,58,237,.35);
+    background:#101827;
+    padding:0 22px; height:60px;
+    border-radius:14px;
+    margin-bottom:20px;
+    box-shadow:0 8px 24px rgba(16,24,39,.14);
 }
 .topnav-left  { display:flex; align-items:center; gap:10px; }
 .topnav-logo  { height:32px; width:32px; border-radius:6px; object-fit:cover; }
@@ -66,8 +66,8 @@ html, body, [class*="css"] {
 .topnav-links a:hover  { background:rgba(255,255,255,.15); color:#fff; }
 .topnav-links a.active { background:rgba(255,255,255,.25); color:#fff; font-weight:700; }
 .topnav-cart {
-    color:#fff; background:rgba(255,255,255,.2); border-radius:20px;
-    padding:4px 13px; font-size:.82rem; font-weight:700; white-space:nowrap;
+    color:#101827; background:#a5f3fc; border-radius:20px;
+    padding:6px 14px; font-size:.82rem; font-weight:800; white-space:nowrap;
 }
 
 /* ── Contact strip ── */
@@ -82,27 +82,34 @@ html, body, [class*="css"] {
 
 /* ── Hero ── */
 .hero {
-    background:linear-gradient(135deg,#4c1d95 0%,#7c3aed 60%,#a855f7 100%);
-    border-radius:14px; padding:22px 26px 18px;
-    margin-bottom:16px; color:#fff;
+    position:relative; overflow:hidden;
+    background:radial-gradient(ellipse at 88% 15%,rgba(34,211,238,.27),transparent 33%),
+               linear-gradient(120deg,#101827 0%,#172b46 58%,#164e63 100%);
+    border-radius:20px; padding:30px 32px;
+    margin-bottom:20px; color:#fff;
+    box-shadow:0 16px 38px rgba(16,24,39,.16);
 }
 .hero-inner { display:flex; align-items:center; gap:16px; }
 .hero-logo   { height:52px; width:52px; border-radius:10px; object-fit:cover;
                border:2px solid rgba(255,255,255,.35); flex-shrink:0; }
-.hero h1 { margin:0 0 3px; font-size:1.5rem; font-weight:800; }
-.hero p  { margin:0; font-size:.9rem; opacity:.85; }
+.hero-kicker {
+    display:inline-block; margin-bottom:8px; color:#a5f3fc;
+    font-size:.7rem; font-weight:800; letter-spacing:.14em;
+}
+.hero h1 { margin:0 0 6px; font-size:clamp(1.65rem,4vw,2.45rem); font-weight:850; letter-spacing:-.04em; }
+.hero p  { margin:0; max-width:560px; font-size:.98rem; opacity:.84; line-height:1.5; }
 
 /* ── Section title ── */
 .section-title {
-    font-size:1.05rem; font-weight:700; color:#4c1d95;
-    margin:18px 0 10px; border-left:3px solid #7c3aed; padding-left:9px;
+    font-size:1.15rem; font-weight:800; color:#101827;
+    margin:22px 0 12px; border-left:4px solid #06b6d4; padding-left:10px;
 }
 
 /* ── Filter bar ── */
-.filter-bar {
-    background:#fff; border:1px solid #ddd6fe;
-    border-radius:10px; padding:8px 12px; margin-bottom:14px;
-    box-shadow:0 1px 4px rgba(124,58,237,.08);
+.filter-bar, .st-key-store-filters {
+    background:#fff; border:1px solid #e2e8f0;
+    border-radius:14px; padding:10px 12px; margin-bottom:16px;
+    box-shadow:0 4px 16px rgba(15,23,42,.045);
 }
 
 /* ── Product card ── */
@@ -178,52 +185,115 @@ html, body, [class*="css"] {
 
 /* ── Buttons ── */
 .stButton>button[kind="primary"] {
-    background:linear-gradient(90deg,#7c3aed,#a855f7) !important;
-    border:none !important; border-radius:8px !important;
+    background:#101827 !important;
+    border:none !important; border-radius:9px !important;
     font-weight:600 !important; letter-spacing:.2px;
     color:#fff !important;
 }
 .stButton>button[kind="secondary"] {
-    border-radius:8px !important; font-weight:500 !important;
-    border:1px solid #ddd6fe !important; color:#7c3aed !important;
+    border-radius:9px !important; font-weight:600 !important;
+    border:1px solid #dbe3eb !important; color:#334155 !important;
 }
 .stDownloadButton>button {
     background:linear-gradient(90deg,#059669,#0d9488) !important;
     color:#fff !important; border:none !important;
     border-radius:8px !important; font-weight:600 !important;
 }
-/* tighten column padding so 2 cols always fit on mobile */
+/* Product grid: four across on desktop and two across on phones. */
 [data-testid="column"] { padding-left:3px !important; padding-right:3px !important; }
 [data-testid="stNumberInput"] { max-width:100%; }
+[class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:12px !important;
+}
+[class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    width:auto !important;
+    min-width:0 !important;
+    flex:none !important;
+}
+[class*="st-key-product-row-"] [data-testid="stVerticalBlock"] {
+    gap:.55rem !important;
+}
+[class*="st-key-product-row-"] [data-testid="stImage"] {
+    background:#f6f8fa;
+    border-radius:12px;
+    overflow:hidden;
+}
+[class*="st-key-product-row-"] [data-testid="stImage"] img {
+    height:170px !important;
+    object-fit:contain !important;
+}
+[class*="st-key-product-row-"] [data-testid="stVerticalBlockBorderWrapper"] {
+    height:100%;
+    border:1px solid #e5eaf0 !important;
+    border-radius:16px !important;
+    background:#fff !important;
+    box-shadow:0 4px 16px rgba(15,23,42,.045);
+    transition:transform .18s ease,box-shadow .18s ease;
+}
+[class*="st-key-product-row-"] [data-testid="stVerticalBlockBorderWrapper"]:hover {
+    transform:translateY(-3px);
+    box-shadow:0 12px 28px rgba(15,23,42,.11);
+}
 
 @media (max-width: 640px) {
-    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
+    .block-container {
+        padding: .55rem .45rem 1.5rem !important;
+    }
+    .topnav {
+        height:52px;
+        padding:0 13px;
+        border-radius:0 0 13px 13px;
+        margin:-.55rem -.45rem 14px;
+    }
+    .hero {
+        border-radius:15px;
+        padding:20px 17px;
+        margin-bottom:14px;
+    }
+    .hero-logo { height:42px; width:42px; }
+    .hero p { font-size:.84rem; }
+    .filter-bar { padding:7px; }
+    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] {
         display:grid !important;
         grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         gap:6px !important;
     }
-    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
         width:auto !important;
         min-width:0 !important;
         flex:none !important;
     }
-    [class*="st-key-product-row-"] [data-testid="stImage"] img {
-        height:100px !important;
-        object-fit:contain !important;
+    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child {
+        grid-column:1 / -1;
     }
-    [class*="st-key-product-row-"] [data-testid="stVerticalBlock"] {
-        gap:.35rem !important;
+    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:7px !important;
+    }
+    [class*="st-key-product-row-"] [data-testid="stImage"] img {
+        height:112px !important;
     }
     [class*="st-key-product-row-"] .stButton button {
-        padding:.35rem .2rem !important;
-        font-size:.75rem !important;
+        min-height:2.25rem;
+        padding:.35rem .18rem !important;
+        font-size:.72rem !important;
     }
+    [class*="st-key-product-row-"] [data-testid="stVerticalBlockBorderWrapper"] { border-radius:13px !important; }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+    [class*="st-key-product-row-"] [data-testid="stImage"] img { height:150px !important; }
 }
 
 /* ── Nav tabs — purple dark bar ── */
 [data-testid="stTabs"] [data-baseweb="tab-list"] {
-    background:linear-gradient(90deg,#4c1d95 0%,#6d28d9 100%);
-    border-radius:0 0 14px 14px;
+    background:#101827;
+    border-radius:13px;
     padding:6px 12px; gap:4px;
     border-bottom:none !important;
     margin-bottom:16px;
@@ -238,7 +308,7 @@ html, body, [class*="css"] {
     background:rgba(255,255,255,.15) !important; color:#fff !important;
 }
 [data-testid="stTabs"] [aria-selected="true"] {
-    background:rgba(255,255,255,.25) !important;
+    background:#164e63 !important;
     color:#fff !important; font-weight:700 !important;
 }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"],
@@ -462,7 +532,7 @@ with tab_shop:
         )
 
     # ── Hero ─────────────────────────────────────────────────
-    store_tagline = settings.get("tagline") or "Browse our collection · Place your order · Pay on delivery"
+    store_tagline = settings.get("tagline") or "Discover wireless earbuds, headphones and speakers made for your everyday."
     hero_logo_html = (f'<img class="hero-logo" src="{logo_url}" alt="Store logo"/>'
                       if logo_url else "🛍️")
     st.markdown(f"""
@@ -470,6 +540,7 @@ with tab_shop:
       <div class="hero-inner">
         {hero_logo_html}
         <div>
+          <span class="hero-kicker">WIRELESS AUDIO · EVERYDAY ESSENTIALS</span>
           <h1>{store_name}</h1>
           <p>{store_tagline}</p>
         </div>
@@ -486,17 +557,16 @@ with tab_shop:
         all_cats = ["All categories"]
 
     # ── Filter bar ────────────────────────────────────────────
-    st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-    fc1, fc2, fc3 = st.columns([3, 2, 1])
-    with fc1:
-        search = st.text_input("Search", placeholder="🔍  Product name…",
-                               label_visibility="collapsed")
-    with fc2:
-        cat_choice = st.selectbox("Category", all_cats, label_visibility="collapsed")
-    with fc3:
-        sort_opt = st.selectbox("Sort", ["Newest","Price ↑","Price ↓"],
-                                label_visibility="collapsed")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container(key="store-filters"):
+        fc1, fc2, fc3 = st.columns([3, 2, 1])
+        with fc1:
+            search = st.text_input("Search", placeholder="🔍  Search audio products…",
+                                   label_visibility="collapsed")
+        with fc2:
+            cat_choice = st.selectbox("Category", all_cats, label_visibility="collapsed")
+        with fc3:
+            sort_opt = st.selectbox("Sort", ["Newest","Price ↑","Price ↓"],
+                                    label_visibility="collapsed")
 
     # ── Fetch + filter ────────────────────────────────────────
     try:
@@ -642,17 +712,11 @@ with tab_shop:
 
         # Keep each product's image, details, and controls together in one card.
 
-        padded_p = list(products)
-        if len(padded_p) % 2:
-            padded_p.append(None)
-        pairs = [padded_p[i:i+2] for i in range(0, len(padded_p), 2)]
-
-        for row_index, pair in enumerate(pairs):
+        product_rows = [products[i:i+4] for i in range(0, len(products), 4)]
+        for row_index, product_row in enumerate(product_rows):
             with st.container(key=f"product-row-{row_index}"):
-                product_cols = st.columns(2, gap="small")
-                for col, p in zip(product_cols, pair):
-                    if p is None:
-                        continue
+                product_cols = st.columns(4, gap="small")
+                for col, p in zip(product_cols, product_row):
                     media       = media_by_product.get(p["id"], [])
                     img_list    = [m["file_url"] for m in media if m.get("media_type") == "image"]
                     primary_url = img_list[0] if img_list else None
