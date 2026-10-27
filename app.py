@@ -199,16 +199,16 @@ html, body, [class*="css"] {
     color:#fff !important; border:none !important;
     border-radius:8px !important; font-weight:600 !important;
 }
-/* Product grid: four across on desktop and two across on phones. */
-[data-testid="column"] { padding-left:3px !important; padding-right:3px !important; }
+/* Keep product rows aligned with the two-column layout at every screen size. */
+[data-testid="stColumn"] { padding-left:3px !important; padding-right:3px !important; }
 [data-testid="stNumberInput"] { max-width:100%; }
 [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
     display:grid !important;
-    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-    gap:12px !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:10px !important;
 }
-[class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-    width:auto !important;
+[class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+    width:100% !important;
     min-width:0 !important;
     flex:none !important;
 }
@@ -260,18 +260,15 @@ html, body, [class*="css"] {
         grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         gap:6px !important;
     }
-    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-        width:auto !important;
+    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+        width:100% !important;
         min-width:0 !important;
         flex:none !important;
     }
-    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="column"]:first-child {
+    [class*="st-key-store-filters"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child {
         grid-column:1 / -1;
     }
-    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
-        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-        gap:7px !important;
-    }
+    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] { gap:7px !important; }
     [class*="st-key-product-row-"] [data-testid="stImage"] img {
         height:112px !important;
     }
@@ -284,9 +281,6 @@ html, body, [class*="css"] {
 }
 
 @media (min-width: 641px) and (max-width: 900px) {
-    [class*="st-key-product-row-"] [data-testid="stHorizontalBlock"] {
-        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    }
     [class*="st-key-product-row-"] [data-testid="stImage"] img { height:150px !important; }
 }
 
@@ -361,6 +355,44 @@ def sale_pct(orig, sale) -> str:
     except Exception:
         pass
     return ""
+
+def upload_product_media(product_id: str, files: list, existing_media: list | None = None):
+    existing_media = existing_media or []
+    next_order = max((int(m.get("sort_order") or 0) for m in existing_media), default=-1) + 1
+    has_primary_image = any(
+        m.get("media_type") == "image" and m.get("is_primary")
+        for m in existing_media
+    )
+
+    for offset, file in enumerate(files):
+        suffix = file.name.rsplit(".", 1)[-1].lower() if "." in file.name else "bin"
+        if suffix in IMAGE_SUFFIXES and suffix != "gif":
+            try:
+                body, suffix = compress_image(file.getvalue(), file.name)
+            except Exception:
+                body = file.getvalue()
+        else:
+            body = file.getvalue()
+
+        path = f"{product_id}/{uuid.uuid4().hex}.{suffix}"
+        content_type = CONTENT_TYPES.get(suffix, file.type or "application/octet-stream")
+        db.storage.from_("product-media").upload(
+            path, body, {"content-type": content_type, "upsert": "false"}
+        )
+        url = db.storage.from_("product-media").get_public_url(path)
+        media_type = "video" if suffix in VIDEO_SUFFIXES else "image"
+        is_primary = media_type == "image" and not has_primary_image
+        db.table("product_media").insert({
+            "product_id": product_id,
+            "file_path": path,
+            "file_url": url,
+            "media_type": media_type,
+            "caption": file.name,
+            "sort_order": next_order + offset,
+            "is_primary": is_primary,
+        }).execute()
+        if is_primary:
+            has_primary_image = True
 
 
 # ─────────────────────────────────────────────────────────────
@@ -712,10 +744,10 @@ with tab_shop:
 
         # Keep each product's image, details, and controls together in one card.
 
-        product_rows = [products[i:i+4] for i in range(0, len(products), 4)]
+        product_rows = [products[i:i+2] for i in range(0, len(products), 2)]
         for row_index, product_row in enumerate(product_rows):
             with st.container(key=f"product-row-{row_index}"):
-                product_cols = st.columns(4, gap="small")
+                product_cols = st.columns(2, gap="small")
                 for col, p in zip(product_cols, product_row):
                     media       = media_by_product.get(p["id"], [])
                     img_list    = [m["file_url"] for m in media if m.get("media_type") == "image"]
@@ -1077,23 +1109,7 @@ with tab_admin:
                                 "category":category.strip() or None,"active":active,
                             }).execute().data
                             pid = ins[0]["id"]
-                            for si, f in enumerate(uploads or []):
-                                suf = (f.name.rsplit(".",1)[-1].lower() if "." in f.name else "bin")
-                                if suf in IMAGE_SUFFIXES and suf != "gif":
-                                    try: ub, suf = compress_image(f.getvalue(), f.name)
-                                    except Exception: ub = f.getvalue()
-                                else:
-                                    ub = f.getvalue()
-                                path = f"{pid}/{uuid.uuid4().hex}.{suf}"
-                                ct   = CONTENT_TYPES.get(suf, f.type or "application/octet-stream")
-                                db.storage.from_("product-media").upload(path, ub, {"content-type":ct,"upsert":"false"})
-                                url = db.storage.from_("product-media").get_public_url(path)
-                                mt  = "video" if suf in VIDEO_SUFFIXES else "image"
-                                db.table("product_media").insert({
-                                    "product_id":pid,"file_path":path,"file_url":url,
-                                    "media_type":mt,"caption":f.name,
-                                    "sort_order":si,"is_primary":si==0 and mt=="image",
-                                }).execute()
+                            upload_product_media(pid, uploads or [])
                             st.success(f"✅ '{name.strip()}' saved.")
                             st.rerun()
                         except Exception as e:
@@ -1109,6 +1125,16 @@ with tab_admin:
             for p in prods:
                 lbl = f"{p['name']} · {money(p.get('price'))} · {'✅ Published' if p['active'] else '🔒 Hidden'}"
                 with st.expander(lbl):
+                    try:
+                        med = (db.table("product_media").select("*")
+                               .eq("product_id", p["id"]).order("sort_order")
+                               .execute().data or [])
+                    except Exception as e:
+                        safe_error(e)
+                        med = []
+
+                    media_revision_key = f"edit_media_revision_{p['id']}"
+                    media_revision = st.session_state.get(media_revision_key, 0)
                     with st.form(f"edit_{p['id']}"):
                         ec1, ec2 = st.columns(2)
                         with ec1:
@@ -1119,44 +1145,63 @@ with tab_admin:
                         with ec2:
                             edesc  = st.text_area("Description", value=p.get("description") or "", height=110)
                             eact   = st.checkbox("Published", value=bool(p["active"]))
+                            edit_uploads = st.file_uploader(
+                                "Add photos / videos (up to 8 total)",
+                                type=["png","jpg","jpeg","webp","gif","mp4","webm","mov"],
+                                accept_multiple_files=True,
+                                key=f"edit_media_{p['id']}_{media_revision}",
+                                help="Existing media stays in place. Remove old files below if you want to replace them.",
+                            )
                         if st.form_submit_button("💾 Update"):
-                            try:
-                                epv = None
-                                if eprice.strip():
-                                    ev = Decimal(eprice.strip())
-                                    if not ev.is_finite() or ev < 0: raise InvalidOperation
-                                    epv = float(ev)
-                                eov = None
-                                if eorig.strip():
-                                    ov2 = Decimal(eorig.strip())
-                                    if not ov2.is_finite() or ov2 < 0: raise InvalidOperation
-                                    eov = float(ov2)
-                                db.table("products").update({
-                                    "name":ename.strip(),"description":edesc.strip(),
-                                    "price":epv,"original_price":eov,
-                                    "category":ecat.strip() or None,"active":eact,
-                                }).eq("id",p["id"]).execute()
-                                st.success("Updated."); st.rerun()
-                            except Exception as e: safe_error(e)
+                            validation_error = None
+                            if not ename.strip():
+                                validation_error = "Product name required."
+                            elif len(med) + len(edit_uploads or []) > 8:
+                                remaining = max(0, 8 - len(med))
+                                validation_error = (
+                                    f"This product already has {len(med)} media file(s). "
+                                    f"You can add at most {remaining} more."
+                                )
+                            if validation_error:
+                                st.error(validation_error)
+                            else:
+                                try:
+                                    epv = None
+                                    if eprice.strip():
+                                        ev = Decimal(eprice.strip())
+                                        if not ev.is_finite() or ev < 0: raise InvalidOperation
+                                        epv = float(ev)
+                                    eov = None
+                                    if eorig.strip():
+                                        ov2 = Decimal(eorig.strip())
+                                        if not ov2.is_finite() or ov2 < 0: raise InvalidOperation
+                                        eov = float(ov2)
+                                    db.table("products").update({
+                                        "name":ename.strip(),"description":edesc.strip(),
+                                        "price":epv,"original_price":eov,
+                                        "category":ecat.strip() or None,"active":eact,
+                                    }).eq("id",p["id"]).execute()
+                                    upload_product_media(p["id"], edit_uploads or [], med)
+                                    if edit_uploads:
+                                        st.session_state[media_revision_key] = media_revision + 1
+                                    st.success("Updated."); st.rerun()
+                                except Exception as e: safe_error(e)
 
                     # Media grid
-                    try:
-                        med = db.table("product_media").select("*").eq("product_id",p["id"]).order("sort_order").execute().data or []
-                        if med:
-                            st.markdown("**Media**")
-                            mcols = st.columns(min(len(med),4))
-                            for mi, m in enumerate(med):
-                                with mcols[mi%4]:
-                                    if m["media_type"]=="video": st.video(m["file_url"])
-                                    else: st.image(m["file_url"], use_container_width=True)
-                                    st.caption(m.get("caption") or "")
-                                    if st.button("🗑 Delete", key=f"delmedia_{m['id']}"):
-                                        try:
-                                            db.storage.from_("product-media").remove([m["file_path"]])
-                                            db.table("product_media").delete().eq("id",m["id"]).execute()
-                                            st.rerun()
-                                        except Exception as e: safe_error(e)
-                    except Exception as e: safe_error(e)
+                    if med:
+                        st.markdown("**Media**")
+                        mcols = st.columns(min(len(med),4))
+                        for mi, m in enumerate(med):
+                            with mcols[mi%4]:
+                                if m["media_type"]=="video": st.video(m["file_url"])
+                                else: st.image(m["file_url"], use_container_width=True)
+                                st.caption(m.get("caption") or "")
+                                if st.button("🗑 Delete", key=f"delmedia_{m['id']}"):
+                                    try:
+                                        db.storage.from_("product-media").remove([m["file_path"]])
+                                        db.table("product_media").delete().eq("id",m["id"]).execute()
+                                        st.rerun()
+                                    except Exception as e: safe_error(e)
 
                     st.markdown("---")
                     if st.button("🗑 DELETE PRODUCT", key=f"del_{p['id']}"):
